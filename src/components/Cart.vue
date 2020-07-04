@@ -22,8 +22,8 @@
             Price: {{product.price}}
           </b-card-text>
 
-          <b-button v-if="!checkIsAddCart(product.id)" @click="add(product)" href="#" variant="primary"> Add to Shopping Cart </b-button>
-          <b-button v-else @click="add(product)" :disabled="product.cart" href="#" variant="warning">Sản phẩm đã được thêm vào giỏ hàng</b-button>
+          <b-button v-if="!checkIsAddCart(product.id)" @click="add(product)" href="#"  variant="primary"> Thêm vào giỏ hàng </b-button>
+          <b-button v-else @click="add(product)"  disabled href="#" block variant="warning">Sản phẩm đã được thêm vào giỏ hàng</b-button>
           </b-card>
         
         </b-col>
@@ -46,9 +46,15 @@
            <tr v-for="(item,index) in cart" :key="index">
              <td>{{index+1}}</td>
              <td>{{item.name}}</td>
-             <td><button @click="increment(item.id)">+</button> {{item.quantity}} </td>
+             <td style="display:flex;margin-left: 30%;">
+               
+                <button @click="decrement(item.id)" class="btn btn-info">-</button> 
+                 <h4 style="width:20%;">{{item.quantity}}</h4> 
+                <button @click="increment(item.id)" class="btn btn-info">+</button>
+              
+              </td>
              <td>{{item.price}}</td>
-             <td><a href="javascript:;" @click="remove(item.id)">Remove</a></td>
+             <td><a href="javascript:;" @click="remove(item.id)" class="btn btn-danger"> X </a></td>
            </tr>
          </table>
         </b-col>
@@ -56,24 +62,21 @@
 
       <b-row v-if="cart.length >0">
         <b-col></b-col>
-        <b-col cols="4">Youtube Channel</b-col>
+        <b-col cols="4"></b-col>
         <b-col></b-col>
         <b-col>
-          <b-button @click="buy" variant="success" block class="mr-2">
-            Mua
+          <b-button @click="buy" variant="success" block class="mr-2" style="margin: 5%;">
+            Mua Hàng
           </b-button>
 
         </b-col>
       </b-row>
-      <b-modal hide-header-close no-close-on-esc no-close-on-backdrop ref="modal-1" certered title="Purchase Completed"/>
-        <template slot="modal-footer">
-          <b-button class="mt-3" variant="info" block @click="clean"> Đóng </b-button>
-
-        </template>
-      
-        <ul v-for="productFinal in ticket.products" :key="productFinal.id">
+      <b-modal  ref="modal-1" id="modal-1" certered title="Purchase Completed" hide-footer>
+        <p>Sản phẩm: </p>
+        <ul v-for="productFinal in cart" :key="productFinal.id">
+          <hr>
           <li> 
-            Sản phẩm :{{productFinal.name}}
+            Tên Sản phẩm :{{productFinal.name}}
           </li>
           <li>
             quantity: {{productFinal.quantity}}
@@ -82,13 +85,48 @@
             Price: {{productFinal.price}}
           </li>
           <li>
-            Total:{{productFinal.price = productFinal.quantity}}
+            Total:{{productFinal.price * productFinal.quantity}}
           </li>
-          <hr>
-        
         </ul>
+         <hr>
+        <h2>Total: ${{total}}.00</h2>
+        <b-button class="mt-2" variant="outline-warning" block @click="toggleModal">Thanh toán</b-button>
+        <hr>
+        <b-button style="width:auto; margin-left: 90%; " block @click="$bvModal.hide('modal-1')">Hủy</b-button>
+       
+      </b-modal>
+      <b-modal ref="modal-3" certered title="Login" hide-footer>
+        
+      <div class="form-group" @submit="onSubmit" @reset="onReset" >
+        <label style="font-size: 12px;height: 15px;line-height: 15px;overflow: hidden;color: #424242;display: block;margin-bottom: 5px;">Phone Number or Email</label>
+        <input
+          id="input-1"
+          v-model="form.text"
+          type="text"
+          required
+          placeholder="UserName"
+          style="margin-bottom: 2%;"
+          class="form-control"
+        />
+        <label style="font-size: 12px;height: 15px;line-height: 15px;overflow: hidden;color: #424242;display: block;margin-bottom: 5px;">Password</label>
+        <input
+          id="input-1"
+          v-model="form.password"
+          type="password"
+          required
+          style="margin-bottom:5%"
+          placeholder="Password"
+          class="form-control"
+        />
+        <b-button type="submit" variant="primary" style="margin-left: 60%;">Đăng Nhập</b-button>
+        <b-button class="ml-2" @click="exit" >Đóng</b-button>
+      </div>
+      </b-modal>
+        <template >
+          <a  href="javascript:;"  class="btn btn-danger" style="margin-right: 85%;" variant="info" block @click="clean" v-if="cart.length > 0"> Xóa tất cả </a>
+          
+        </template>
         <h2 class="my-4"> Total: ${{total}}.00</h2>
-
     </b-container>
   </div>
 </template>
@@ -97,6 +135,10 @@ export default {
   name:'Cart',
   data(){
     return{
+      form: {
+          username:"",
+          password:"",
+        },
       ticket:{
         products: null,
         total:0
@@ -134,6 +176,16 @@ export default {
     }
   },
   methods:{
+    exit(){
+      this.$refs['modal-3'].hide(),
+        this.$refs['modal-1'].hide()
+    },
+    toggleModal() {
+        // We pass the ID of the button that we want to return focus to
+        // when the modal has hidden
+        this.$refs['modal-3'].show(),
+        this.$refs['modal-1'].hide()
+      },
     add(product){
       product.quantity =1;
       this.cart.push(product)
@@ -149,14 +201,17 @@ export default {
     },
     remove(id){
       this.cart = this.cart.filter(item => item.id != id);
+      
+      // 
     },
     buy(){
       this.ticket={
-        product:this.cart,
-        total:this.total
+        product : this.cart,
+        total : this.total
       }
       this.$refs['modal-1'].show()
     },
+    
     increment(id){
      this.cart = this.cart.map(item=>{
        if(item.id == id){
@@ -166,11 +221,13 @@ export default {
      })
     },
     decrement(id){
-      for(let index=0; index < this.cart.length; index++){
-        if(this.cart[index].id == id){
-          this.cart[index].quantity--
-        }
-      }
+      this.cart = this.cart.map(item=>{
+       if(item.id == id){
+         if(item.quantity != 1)
+         item.quantity --;
+       }
+       return item;
+     })
     },
     checkIsAddCart(id){
       return this.cart.find(item=>item.id == id) != null
@@ -186,6 +243,10 @@ export default {
       return t
     }
   },
+  onSubmit(evt) {
+        evt.preventDefault()
+        alert(JSON.stringify(this.form))
+      },
   watch:{
     counter(value){
 
